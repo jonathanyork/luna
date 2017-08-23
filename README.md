@@ -1,0 +1,6 @@
+# luna
+The Moon is an astronomical body that orbits planet Earth, being Earth's only permanent natural satellite. It is the fifth-largest natural satellite in the Solar System, and the largest among planetary satellites relative to the size of the planet that it orbits (its primary). Following Jupiter's satellite Io, the Moon is second-densest satellite among those whose densities are known.
+
+The Moon is thought to have formed about 4.51 billion years ago, not long after Earth. The most widely accepted explanation is that the Moon formed from the debris left over after a giant impact between Earth and a Mars-sized body called Theia.
+
+The Moon is in synchronous rotation with Earth, always showing the same face, with its near side marked by dark volcanic maria that fill the spaces between the bright ancient crustal highlands and the prominent impact craters. As seen from the Earth, it is the second-brightest regularly visible celestial object in Earth's sky, after the Sun. Its surface is actually dark, although compared to the night sky it appears very bright, with a reflectance just slightly higher than that of worn asphalt. Its gravitational influence produces the ocean tides, body tides, and the slight lengthening of the day.
