@@ -8,26 +8,61 @@ import scalax.collection.edge.Implicits._ // shortcuts
 import scala.collection.mutable.ArrayBuffer
 import domain._
 
-object Main extends App {
- import Holding._
- import Taxonomy._
- import Filters._
+trait D { def name: String }
+case class A(name: String)
+case class B(name: String)
+case class C(name: String) extends D
 
- val g = Graph(
-   Investment("Global 60/40", Portfolio)~>Investment("Equities") ## 0.5,
-     Investment("Equities")~>Investment("US Equities") ## 0.6,
-       Investment("US Equities")~>Investment("US Equities Excess Returns", ReturnStream) ## 1.0,
-       Investment("US Equities")~>Investment("USD Cash Returns", ReturnStream) ## 1.0,
-     Investment("Equities")~>Investment("EUR Equities") ## 0.4,
-       Investment("EUR Equities")~>Investment("EUR Equities Excess Returns", ReturnStream) ## 1.0,
-       Investment("EUR Equities")~>Investment("EUR Cash Returns", ReturnStream) ## 1.0,
-   Investment("Global 60/40", Portfolio)~>Investment("Bonds") ## 0.5,
-     Investment("Bonds")~>Investment("Nominal Bonds") ## 0.7,
-       Investment("Nominal Bonds")~>Investment("Nominal Bonds Excess Returns", ReturnStream) ## 1.0,
-       Investment("Nominal Bonds")~>Investment("USD Cash Returns", ReturnStream) ## 1.0,
-     Investment("Bonds")~>Investment("IL Bonds") ## 0.3,
-       Investment("IL Bonds")~>Investment("IL Bonds Excess Returns", ReturnStream) ## 1.0,
-       Investment("IL Bonds")~>Investment("USD Cash Returns", ReturnStream) ## 1.0)
+trait ED
+
+case class EA[+N](fromNode: N, toNode: N)
+  extends DiEdge[N](NodeProduct(fromNode, toNode))
+  with    ExtendedKey[N]
+  with    EdgeCopy[EA]
+  with    OuterEdge[N,EA] 
+  with    ED
+{
+  private def this(nodes: Product) {
+    this(nodes.productElement(0).asInstanceOf[N],
+         nodes.productElement(1).asInstanceOf[N])
+  }
+  def keyAttributes = Seq()
+  override def copy[NN](newNodes: Product) = new EA[NN](newNodes)
+  override protected def attributesToString = s"EA" 
+}
+
+case class EB[+N](fromNode: N, toNode: N)
+  extends DiEdge[N](NodeProduct(fromNode, toNode))
+  with    ExtendedKey[N]
+  with    EdgeCopy[EB]
+  with    OuterEdge[N,EB]
+  with    ED
+{
+  private def this(nodes: Product) {
+    this(nodes.productElement(0).asInstanceOf[N],
+         nodes.productElement(1).asInstanceOf[N])
+  }
+  def keyAttributes = Seq()
+  override def copy[NN](newNodes: Product) = new EB[NN](newNodes)
+  override protected def attributesToString = s"EB" 
+}
+
+object ED {
+  implicit final class ImplicitEdge[A <: D](val e: DiEdge[A]) extends AnyVal {
+    def ## (something: String) = new EA[A](e.source, e.target)
+  } 
+}
+
+object Main extends App {
+  //import ED._
+
+  val g = Graph(
+    A("One")~>A("Two"),
+      EA(A("Two"),A("Three")),
+    EB(A("One"),C("Four")),
+      EA(A("Four"),B("Five")),
+    (A("One")~+>A("Six"))(0.5)
+  )
 
   // All the nodes
   println(g.nodes mkString ":")
@@ -35,43 +70,31 @@ object Main extends App {
   // All the holdings
   println(g.edges mkString ":")
 
+  val g2 = g + (A("One")~+>A("Six"))(0.2)
+  // All the nodes
+  println(g2.edges mkString ":")
+  
   // The top level portfolio
-  val p = g get Investment("Global 60/40", Portfolio)
+  val p = g get A("One")
  
   // All the nodes with a traverser 
-  println(p.outerNodeTraverser.map(_.toString()))
+  println(p.outerNodeTraverser.map(_.getClass.toString()))
 
-  // Only the assets
-  println(p.outerNodeTraverser.filter(AssetsOnly).map(_.toString()))
- 
-  // Only the return streams
-  println(p.outerNodeTraverser.filter(ReturnStreamsOnly).map(_.toString()))
+  // All the nodes with a traverser 
+  println(p.innerNodeTraverser.map(_.getClass.toString()))
 
-  // Only the portfolios
-  println(p.outerNodeTraverser.filter(PortfoliosOnly).map(_.toString()))
+    // All the nodes with a traverser 
+  println(p.outerEdgeTraverser.map(_.getClass.toString()))
 
-    
+  // All the nodes with a traverser 
+  println(p.innerEdgeTraverser.map(_.getClass.toString()))
+
+/*
   // Same thing with a for comprehension
   println(
     for {
       a <- p.outerNodeTraverser
-      if PortfoliosOnly(a)
     } yield a.toString()
   )
-
-  // Only the users
-  println(p.outerNodeTraverser.filter(UsersOnly).map(_.toString()))
-
-  // Same thing with a one way traverser
-  println((ArrayBuffer.empty[String] /: p.innerNodeTraverser)(_ += _.toString()).mkString)
- 
-  // And with an up down traverser
-  println((ArrayBuffer.empty[String] /: p.innerNodeDownUpTraverser) {
-    (buf, param) => param match {
-      case (down, node) => 
-        if (down) buf += (if (node eq p) "(" else "[") += node.toString() // Going down...
-        else      buf += (if (node eq p) ")" else "]")                    // ...and up
-    }
-  }.mkString)
-
+*/
 }
