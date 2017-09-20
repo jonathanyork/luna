@@ -8,53 +8,44 @@ import scalax.collection.edge.Implicits._ // shortcuts
 import scala.collection.mutable.ArrayBuffer
 import domain._
 
-case class Investment(name: String)
-case class User(name: String)
-
-case class Holding[+N](fromNode: N, toNode: N)
-  extends DiEdge[N](NodeProduct(fromNode, toNode))
-  with    ExtendedKey[N]
-  with    EdgeCopy[Holding]
-  with    OuterEdge[N,Holding] 
-{
-  private def this(nodes: Product) {
-    this(nodes.productElement(0).asInstanceOf[N],
-         nodes.productElement(1).asInstanceOf[N])
-  }
-  def keyAttributes = Seq()
-  override def copy[NN](newNodes: Product) = new Holding[NN](newNodes)
-  override protected def attributesToString = s"Holding" 
-}
-
-case class Permission[+N](fromNode: N, toNode: N, something: Int)
-  extends DiEdge[N](NodeProduct(fromNode, toNode))
-  with    ExtendedKey[N]
-  with    EdgeCopy[Permission]
-  with    OuterEdge[N,Permission]
-{
-  private def this(nodes: Product, something: Int) {
-    this(nodes.productElement(0).asInstanceOf[N],
-         nodes.productElement(1).asInstanceOf[N], something)
-  }
-  def keyAttributes = Seq()
-  override def copy[NN](newNodes: Product) = new Permission[NN](newNodes, something)
-  override protected def attributesToString = s"Permission" 
-}
-
-object ED {
-  implicit final class ImplicitEdge[Investment](val e: DiEdge[Investment]) extends AnyVal {
-    def ## (something: String) = new Holding[Investment](e.source, e.target)
-  } 
-}
-
 object Main extends App {
-  //import ED._
-
+ import Permission._
+ import Taxonomy._
+ import Filters._
+ 
   val g = Graph(
-    Investment("One")~>Investment("Two"),
-      Holding(Investment("Two"),Investment("Three")),
-    Permission(Investment("One"),User("Four"),2),
-      Holding(Investment("Four"),User("Five")),
+   Holding(Investment("Global 60/40", Portfolio), Investment("Equities"), 0.5),
+       Permission(Investment("Equities"),User("Big Boss"),Read),
+     Holding(Investment("Equities"), Investment("US Equities"), 0.6),
+       Permission(Investment("US Equities"),User("Big Boss"),Read),
+       Holding(Investment("US Equities"), Investment("US Equities Excess Returns", ReturnStream), 1.0),
+         Permission(Investment("US Equities Excess Returns", ReturnStream),User("Big Boss"),Read),
+       Holding(Investment("US Equities"), Investment("USD Cash Returns", ReturnStream), 1.0),
+         Permission(Investment("USD Cash Returns", ReturnStream),User("Big Boss"),Read),
+     Holding(Investment("Equities"), Investment("EUR Equities"), 0.4),
+       Permission(Investment("EUR Equities"),User("Big Boss"),Read),
+       Holding(Investment("EUR Equities"), Investment("EUR Equities Excess Returns", ReturnStream), 1.0),
+         Permission(Investment("EUR Equities Excess Returns", ReturnStream),User("Big Boss"),Read),
+       Holding(Investment("EUR Equities"), Investment("EUR Cash Returns", ReturnStream), 1.0),
+         Permission(Investment("EUR Cash Returns", ReturnStream),User("Big Boss"),Read),
+   Holding(Investment("Global 60/40", Portfolio), Investment("Bonds"), 0.5),
+     Permission(Investment("Bonds"),User("Big Boss"),Read),
+     Holding(Investment("Bonds"), Investment("Nominal Bonds"), 0.7),
+       Permission(Investment("Nominal Bonds"),User("Big Boss"),Read),
+       Holding(Investment("Nominal Bonds"), Investment("Nominal Bonds Excess Returns", ReturnStream), 1.0),
+         Permission(Investment("Nominal Bonds Excess Returns", ReturnStream),User("Big Boss"),Read),
+       Holding(Investment("Nominal Bonds"), Investment("USD Cash Returns", ReturnStream), 1.0),
+         Permission(Investment("USD Cash Returns"),User("Big Boss"),Read),
+     Holding(Investment("Bonds"), Investment("IL Bonds"), 0.3),
+       Permission(Investment("IL Bonds"),User("Big Boss"),Read),
+       Holding(Investment("IL Bonds"), Investment("IL Bonds Excess Returns", ReturnStream), 1.0),
+         Permission(Investment("IL Bonds Excess Returns", ReturnStream),User("Big Boss"),Read),
+       Holding(Investment("IL Bonds"), Investment("USD Cash Returns", ReturnStream), 1.0),
+         Permission(Investment("USD Cash Returns", ReturnStream),User("Big Boss"),Read),
+       
+  //     Holding(Investment("Two"),Investment("Three"), 0.6),
+  //  Permission(Investment("One"),User("Four"),Read),
+  //    Holding(Investment("Four"),User("Five"), 0.4),
     (Investment("One")~+>Investment("Six"))(0.5)
   )
 

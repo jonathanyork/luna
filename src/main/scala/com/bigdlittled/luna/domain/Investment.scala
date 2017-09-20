@@ -8,36 +8,20 @@ import scalax.collection.edge.Implicits._ // shortcuts
 import scala.collection.mutable.ArrayBuffer
 
 case class Investment(name: String, investmentType: Taxonomy.InvestmentType = Taxonomy.Asset)
-  extends Permissionable
 
-/*
- * This is the edge subtype that represents a holding from an asset to an investment.
- * I've left the ExtendedKey[N] mix in though it's not used in this case because it's not
- * included in the keyAttribute (as I don't want it to be included in the key).
- */
-case class Holding[+N](asset: N, investment: N, amount: Double)
-  extends DiEdge[N](NodeProduct(asset, investment))
+case class Holding[+N](fromNode: N, toNode: N, amount: Double)
+  extends DiEdge[N](NodeProduct(fromNode, toNode))
   with    ExtendedKey[N]
   with    EdgeCopy[Holding]
-  with    OuterEdge[N,Holding] {
-
+  with    OuterEdge[N,Holding] 
+{
   private def this(nodes: Product, amount: Double) {
     this(nodes.productElement(0).asInstanceOf[N],
          nodes.productElement(1).asInstanceOf[N], amount)
   }
-
-  def keyAttributes = Seq()
+  def keyAttributes = Seq() // Amount isn't a key attribute
   override def copy[NN](newNodes: Product) = new Holding[NN](newNodes, amount)
-  override protected def attributesToString = s" ($amount)" 
-}
-
-/*
- * This implicit makes it easy to construct the extended edge
- */
-object Holding {
-  implicit final class ImplicitEdge[A <: Investment](val e: DiEdge[A]) extends AnyVal {
-    def ## (amount: Double) = new Holding[A](e.source, e.target, amount)
-  } 
+  override protected def attributesToString = s"Holding" 
 }
 
 /*
