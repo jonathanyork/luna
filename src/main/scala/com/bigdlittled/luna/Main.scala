@@ -12,54 +12,39 @@ object Main extends App {
  import Permission._
  import Taxonomy._
  import Filters._
- 
-  val g = Graph(
-   Holding(Investment("Global 60/40", Portfolio), Investment("Equities"), 0.5),
-       Permission(Investment("Equities"),User("Big Boss"),Read),
-     Holding(Investment("Equities"), Investment("US Equities"), 0.6),
-       Permission(Investment("US Equities"),User("Big Boss"),Read),
-       Holding(Investment("US Equities"), Investment("US Equities Excess Returns", ReturnStream), 1.0),
-         Permission(Investment("US Equities Excess Returns", ReturnStream),User("Big Boss"),Read),
-       Holding(Investment("US Equities"), Investment("USD Cash Returns", ReturnStream), 1.0),
-         Permission(Investment("USD Cash Returns", ReturnStream),User("Big Boss"),Read),
-     Holding(Investment("Equities"), Investment("EUR Equities"), 0.4),
-       Permission(Investment("EUR Equities"),User("Big Boss"),Read),
-       Holding(Investment("EUR Equities"), Investment("EUR Equities Excess Returns", ReturnStream), 1.0),
-         Permission(Investment("EUR Equities Excess Returns", ReturnStream),User("Big Boss"),Read),
-       Holding(Investment("EUR Equities"), Investment("EUR Cash Returns", ReturnStream), 1.0),
-         Permission(Investment("EUR Cash Returns", ReturnStream),User("Big Boss"),Read),
-   Holding(Investment("Global 60/40", Portfolio), Investment("Bonds"), 0.5),
-     Permission(Investment("Bonds"),User("Big Boss"),Read),
-     Holding(Investment("Bonds"), Investment("Nominal Bonds"), 0.7),
-       Permission(Investment("Nominal Bonds"),User("Big Boss"),Read),
-       Holding(Investment("Nominal Bonds"), Investment("Nominal Bonds Excess Returns", ReturnStream), 1.0),
-         Permission(Investment("Nominal Bonds Excess Returns", ReturnStream),User("Big Boss"),Read),
-       Holding(Investment("Nominal Bonds"), Investment("USD Cash Returns", ReturnStream), 1.0),
-         Permission(Investment("USD Cash Returns"),User("Big Boss"),Read),
-     Holding(Investment("Bonds"), Investment("IL Bonds"), 0.3),
-       Permission(Investment("IL Bonds"),User("Big Boss"),Read),
-       Holding(Investment("IL Bonds"), Investment("IL Bonds Excess Returns", ReturnStream), 1.0),
-         Permission(Investment("IL Bonds Excess Returns", ReturnStream),User("Big Boss"),Read),
-       Holding(Investment("IL Bonds"), Investment("USD Cash Returns", ReturnStream), 1.0),
-         Permission(Investment("USD Cash Returns", ReturnStream),User("Big Boss"),Read),
-       
-  //     Holding(Investment("Two"),Investment("Three"), 0.6),
-  //  Permission(Investment("One"),User("Four"),Read),
-  //    Holding(Investment("Four"),User("Five"), 0.4),
-    (Investment("One")~+>Investment("Six"))(0.5)
+
+    val investments = Graph[Any,DiEdge](
+      Holding(Investment("Global 60/40", Portfolio), Investment("Equities"), 0.5),
+        Holding(Investment("Equities"), Investment("US Equities"), 0.6),
+          Holding(Investment("US Equities"), Investment("US Equities Excess Returns", ReturnStream), 1.0),
+          Holding(Investment("US Equities"), Investment("USD Cash Returns", ReturnStream), 1.0),
+        Holding(Investment("Equities"), Investment("EUR Equities"), 0.4),
+          Holding(Investment("EUR Equities"), Investment("EUR Equities Excess Returns", ReturnStream), 1.0),
+          Holding(Investment("EUR Equities"), Investment("EUR Cash Returns", ReturnStream), 1.0),
+      Holding(Investment("Global 60/40", Portfolio), Investment("Bonds"), 0.5),
+        Holding(Investment("Bonds"), Investment("Nominal Bonds"), 0.7),
+          Holding(Investment("Nominal Bonds"), Investment("Nominal Bonds Excess Returns", ReturnStream), 1.0),
+          Holding(Investment("Nominal Bonds"), Investment("USD Cash Returns", ReturnStream), 1.0),
+        Holding(Investment("Bonds"), Investment("IL Bonds"), 0.3),
+          Holding(Investment("IL Bonds"), Investment("IL Bonds Excess Returns", ReturnStream), 1.0),
+          Holding(Investment("IL Bonds"), Investment("USD Cash Returns", ReturnStream), 1.0)
   )
 
+  val permissions = investments.nodes.map(_.toOuter).map(Permission(_,User("Big Boss"),Read))
+ 
+  val portfolio = investments ++ permissions
+  
   // All the nodes
-  println(g.nodes mkString ":")
+  println(portfolio.nodes mkString ":")
  
   // All the holdings
-  println(g.edges mkString ":")
+  println(portfolio.edges mkString ":")
   
   // The top level portfolio
-  val p = g get Investment("Global 60/40", Portfolio)
+  val p = portfolio get Investment("Global 60/40", Portfolio)
 
  // Search for the portfolio (and get an Option)
-  val q = g find Investment("Not there", Portfolio) getOrElse Investment("None", Portfolio)
+  val q = portfolio find Investment("Not there", Portfolio) getOrElse Investment("None", Portfolio)
   
   // All the nodes with a traverser 
   println(p.outerNodeTraverser.map(_.getClass.toString()))
@@ -97,18 +82,17 @@ object Main extends App {
   // Only the users
   println(p.outerNodeTraverser.filter(UsersOnly).map(_.toString()))
 
-  val u = g get User("Big Boss")
+  val u = portfolio get User("Big Boss")
  
   // Find all the portfolios that a user has some kind of access to
   println(u.diPredecessors.map(_.toString()))
  
   // And with a for comprehension
-  // TODO: Figure out why the Set can't be filtered with filter(PortfoliosOnly)
   println(
     for {
-      p <- g get User("Big Boss") diPredecessors;
-      if PortfoliosOnly(p)
-    } yield p.toString()
+      o <- portfolio.get(User("Big Boss")).diPredecessors
+      if PortfoliosOnly(o.toOuter)
+    } yield o.toString()
   )
   
   // Same thing with a one way traverser
