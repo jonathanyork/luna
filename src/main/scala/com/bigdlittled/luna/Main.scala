@@ -54,15 +54,12 @@ object Main extends App {
  
   // All the holdings
   println(g.edges mkString ":")
-
-  val g2 = g + (Investment("One")~+>Investment("Six"))(0.2)
-  // All the nodes
-  println(g2.edges mkString ":")
   
   // The top level portfolio
-  val p = g get Investment("One")
+  val p = g get Investment("Global 60/40", Portfolio)
 
-  val q = g find Investment("One")
+ // Search for the portfolio (and get an Option)
+  val q = g find Investment("Not there", Portfolio) getOrElse Investment("None", Portfolio)
   
   // All the nodes with a traverser 
   println(p.outerNodeTraverser.map(_.getClass.toString()))
@@ -76,10 +73,54 @@ object Main extends App {
   // All the nodes with a traverser 
   println(p.innerEdgeTraverser.map(_.getClass.toString()))
 
+    // All the nodes with a traverser 
+  println(p.outerNodeTraverser.map(_.toString()))
+
+  // Only the assets
+  println(p.outerNodeTraverser.filter(AssetsOnly).map(_.toString()))
+ 
+  // Only the return streams
+  println(p.outerNodeTraverser.filter(ReturnStreamsOnly).map(_.toString()))
+
+  // Only the portfolios
+  println(p.outerNodeTraverser.filter(PortfoliosOnly).map(_.toString()))
+
+    
   // Same thing with a for comprehension
   println(
     for {
       a <- p.outerNodeTraverser
+      if PortfoliosOnly(a)
     } yield a.toString()
   )
+
+  // Only the users
+  println(p.outerNodeTraverser.filter(UsersOnly).map(_.toString()))
+
+  val u = g get User("Big Boss")
+ 
+  // Find all the portfolios that a user has some kind of access to
+  println(u.diPredecessors.map(_.toString()))
+ 
+  // And with a for comprehension
+  // TODO: Figure out why the Set can't be filtered with filter(PortfoliosOnly)
+  println(
+    for {
+      p <- g get User("Big Boss") diPredecessors;
+      if PortfoliosOnly(p)
+    } yield p.toString()
+  )
+  
+  // Same thing with a one way traverser
+  println((ArrayBuffer.empty[String] /: p.innerNodeTraverser)(_ += _.toString()).mkString)
+ 
+  // And with an up down traverser
+  println((ArrayBuffer.empty[String] /: p.innerNodeDownUpTraverser) {
+    (buf, param) => param match {
+      case (down, node) => 
+        if (down) buf += (if (node eq p) "(" else "[") += node.toString() // Going down...
+        else      buf += (if (node eq p) ")" else "]")                    // ...and up
+    }
+  }.mkString)
+
 }
