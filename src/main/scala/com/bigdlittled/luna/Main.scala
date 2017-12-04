@@ -13,7 +13,7 @@ object Main extends App {
  import Taxonomy._
  import Filters._
  
-  val g = Graph(
+  val g = Graph[Any,DiEdge](
    Holding(Investment("Global 60/40", Portfolio), Investment("Equities"), 0.5),
        Permission(Investment("Equities"),User("Big Boss"),Read),
      Holding(Investment("Equities"), Investment("US Equities"), 0.6),
@@ -41,13 +41,7 @@ object Main extends App {
        Holding(Investment("IL Bonds"), Investment("IL Bonds Excess Returns", ReturnStream), 1.0),
          Permission(Investment("IL Bonds Excess Returns", ReturnStream),User("Big Boss"),Read),
        Holding(Investment("IL Bonds"), Investment("USD Cash Returns", ReturnStream), 1.0),
-         Permission(Investment("USD Cash Returns", ReturnStream),User("Big Boss"),Read),
-       
-  //     Holding(Investment("Two"),Investment("Three"), 0.6),
-  //  Permission(Investment("One"),User("Four"),Read),
-  //    Holding(Investment("Four"),User("Five"), 0.4),
-    (Investment("One")~+>Investment("Six"))(0.5)
-  )
+         Permission(Investment("USD Cash Returns", ReturnStream),User("Big Boss"),Read))
 
   // All the nodes
   println(g.nodes mkString ":")
